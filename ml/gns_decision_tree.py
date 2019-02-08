@@ -1,7 +1,6 @@
 from typing import List, Tuple, Dict, Any, Union
 
 import pandas as pd
-import unittest
 import logging
 
 
@@ -19,6 +18,7 @@ class GNSDecisionTreeClassifier:
         self.min_impurity_reduction = min_impurity_reduction
         self.max_depth = max_depth
         self.tree = None
+        self.y_values = None
 
         if criterion == "gini":
             self.criterion = self._calculate_gini
@@ -49,8 +49,9 @@ class GNSDecisionTreeClassifier:
             unique_feature = fvs[feature].unique()
             unique_feature.sort()
 
-            for split_i in range(len(unique_feature)):
-                split_v = unique_feature[split_i]  # TODO this should be the mid point
+            for split_i in range(len(unique_feature) - 1):
+                # get the mid point of this value and the next
+                split_v = unique_feature[split_i] + ((unique_feature[split_i + 1] - unique_feature[split_i]) / 2)
 
                 mask = fvs[feature] > split_v
                 left = fvs[mask]
@@ -141,6 +142,8 @@ class GNSDecisionTreeClassifier:
 
     def predict_probability(self, fvs: pd.DataFrame):
         preds = self.predict_counts(fvs)
+        for d in preds:
+            d.keys()
         pass
 
     def predict(self, fvs: pd.DataFrame):
