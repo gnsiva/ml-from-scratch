@@ -149,25 +149,3 @@ class GNSDecisionTreeClassifier:
     def predict(self, fvs: pd.DataFrame):
         preds = self.predict_counts(fvs)
         return preds.map(lambda d: max(d, key=d.get))
-
-
-if __name__ == "__main__":
-    import numpy as np
-    import seaborn as sns
-    from sklearn.model_selection import train_test_split
-
-    # Data setup
-    df = sns.load_dataset("iris")
-    df = df[df.species.isin(["versicolor", "virginica"])].copy()
-    df["species_i"] = (df["species"] == "versicolor").astype(np.uint8)
-
-    train, test = train_test_split(df, random_state=44)
-    X_cols = train.columns[:-2].tolist()
-    y_col = "species_i"
-
-    # check model
-    dt = GNSDecisionTreeClassifier(X_cols, y_col)
-    dt = dt.fit(train)
-    accuracy = (test[y_col] == dt.predict(test)).mean()
-    print("Accuracy: {:.4}".format(accuracy))
-    assert accuracy > .85
