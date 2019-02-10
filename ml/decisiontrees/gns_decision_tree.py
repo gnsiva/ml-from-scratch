@@ -25,12 +25,13 @@ class GNSDecisionTreeClassifier:
         else:
             raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
-    def _calculate_gini(self, left_branch, right_branch):
+    def _calculate_gini(self, left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
+        """Pass dictionary of counts"""
+
         def calc_branch_gini(branch):
-            counts = dict(branch[self.y_col].value_counts())
-            total = sum(counts.values())
+            total = sum(branch.values())
             output = 0
-            for v, count in counts.items():
+            for v, count in branch.items():
                 output += (count / total) ** 2
             return output, total
 
@@ -54,8 +55,8 @@ class GNSDecisionTreeClassifier:
                 split_v = unique_feature[split_i] + ((unique_feature[split_i + 1] - unique_feature[split_i]) / 2)
 
                 mask = fvs[feature] > split_v
-                left = fvs[mask]
-                right = fvs[~mask]
+                left = dict(fvs[mask][self.y_col].value_counts())
+                right = dict(fvs[~mask][self.y_col].value_counts())
 
                 gain = self.criterion(left, right)
                 splits[feature].append((gain, split_v))
