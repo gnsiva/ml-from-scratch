@@ -21,7 +21,7 @@ class GNSDecisionTreeClassifier:
         self.y_values = None
 
         if criterion == "gini":
-            self.criterion = self._calculate_gini
+            self.criterion = self._calculate_gini_gain
         else:
             raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
@@ -31,42 +31,29 @@ class GNSDecisionTreeClassifier:
 
         def calc_branch_gini(branch):
             total = sum(branch.values())
-            output = 0
+            impurity = 0
             for v, count in branch.items():
-                output += (count / total) ** 2
-            return output, total
+                p = (count / total)
+                impurity += p * (1 - p)
+            return impurity, total
 
-        left_gini, left_total = calc_branch_gini(left_branch)
-        right_gini, right_total = calc_branch_gini(right_branch)
-        total = left_total + right_total
+        left_impurity, left_n = calc_branch_gini(left_branch)
+        right_impurity, right_n = calc_branch_gini(right_branch)
+        n = left_n + right_n
 
-        gini = (left_gini * left_total / total) + (right_gini * right_total / total)
+        gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
         return gini
 
-    # @staticmethod
-    # def _calculate_gini(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
-    #     """Pass dictionary of counts"""
-    #
-    #     def calc_branch_gini(branch):
-    #         total = sum(branch.values())
-    #         impurity = 0
-    #         for v, count in branch.items():
-    #             p = (count / total)
-    #             impurity += p * (1 - p)
-    #         return impurity, total
-    #
-    #     left_impurity, left_n = calc_branch_gini(left_branch)
-    #     right_impurity, right_n = calc_branch_gini(right_branch)
-    #     n = left_n + right_n
-    #
-    #     gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
-    #     return gini
+    @staticmethod
+    def _calculate_gini_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
+        return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
 
     def _calculate_stump_split(self, fvs):
-        splits = {}
+        max_feature = None
+        max_split_score = 0
+        max_split_value = None
 
         for feature in self.X_cols:
-            splits[feature] = []
             unique_feature = fvs[feature].unique()
             unique_feature.sort()
 
@@ -79,19 +66,11 @@ class GNSDecisionTreeClassifier:
                 right = dict(fvs[~mask][self.y_col].value_counts())
 
                 gain = self.criterion(left, right)
-                splits[feature].append((gain, split_v))
 
-        max_feature = ""
-        max_split_score = 0
-        max_split_value = 0
-
-        for feature in self.X_cols:
-            split_score, split_value = max(splits[feature])
-
-            if split_score > max_split_score:
-                max_split_score = split_score
-                max_split_value = split_value
-                max_feature = feature
+                if gain > max_split_score:
+                    max_split_score = gain
+                    max_split_value = split_v
+                    max_feature = feature
 
         return max_split_value, max_feature, max_split_score
 

@@ -1,5 +1,7 @@
 from unittest import TestCase
+
 import seaborn as sns
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
@@ -68,3 +70,15 @@ class GNSDecisionTreeClassifierTest(TestCase):
         gini = GNSDecisionTreeClassifier._calculate_gini({0: 0, 1: 2}, {0: 2, 1: 0})
         self.assertAlmostEqual(gini, 0)
 
+    def test_calculate_stump_split(self):
+        fvs = pd.DataFrame([
+            (1, 2, 44),
+            (2, 3, 44)
+        ], columns=["y", "x", "z"])
+
+        dt = GNSDecisionTreeClassifier(X_cols=["x", "z"], y_col="y")
+        split_value, max_feature, max_split_score = dt._calculate_stump_split(fvs)
+
+        self.assertAlmostEqual(split_value, 2.5)
+        self.assertEqual(max_feature, "x")
+        self.assertAlmostEqual(max_split_score, 1.0)
