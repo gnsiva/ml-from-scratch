@@ -57,8 +57,8 @@ class GNSDecisionTreeClassifier:
                 left = fvs[mask]
                 right = fvs[~mask]
 
-                gini = self._calculate_gini(left, right)
-                splits[feature].append((gini, split_v))
+                gain = self.criterion(left, right)
+                splits[feature].append((gain, split_v))
 
         max_feature = ""
         max_split_score = 0

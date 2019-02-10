@@ -1,10 +1,9 @@
 from unittest import TestCase
-import numpy as np
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
-from ml.gns_decision_tree import GNSDecisionTreeClassifier
+from ml.decisiontrees.gns_decision_tree import GNSDecisionTreeClassifier
 
 
 class GNSDecisionTreeClassifierTest(TestCase):
@@ -55,3 +54,4 @@ class GNSDecisionTreeClassifierTest(TestCase):
 
         # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
         self.assertGreater(accuracy, sklearn_accuracy - 0.02)
+
