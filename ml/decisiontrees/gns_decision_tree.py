@@ -25,12 +25,16 @@ class GNSDecisionTreeClassifier:
             y_col: str,
             criterion: str = 'gini',
             max_depth: int = 10,
+            min_samples_leaf: int = 1,
+            min_samples_split: int = 2,
             min_impurity_reduction: float = 1e-6):
 
         self.X_cols = X_cols
         self.y_col = y_col
-        self.min_impurity_reduction = min_impurity_reduction
         self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.min_samples_split = min_samples_split
+        self.min_impurity_reduction = min_impurity_reduction
         self.tree = None
         self.y_values = None
 
@@ -93,10 +97,6 @@ class GNSDecisionTreeClassifier:
     #         overall_class_counts[klass] = v
     #         total += v
 
-
-
-
-
     @staticmethod
     def _calculate_gini_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
         return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
@@ -138,11 +138,14 @@ class GNSDecisionTreeClassifier:
             level: int = 0,
             split_score: float = 0) -> Union[dict, Tuple[Dict[str, Any], Tuple[float, str]]]:
 
-        if fvs.shape[0] < 2:
+        # stopping criteria
+        if fvs.shape[0] <= self.min_samples_split:
+            return self._get_leaf_counts(fvs)
+        elif fvs.shape[0] <= self.min_samples_leaf:
             return self._get_leaf_counts(fvs)
         elif fvs[self.y_col].unique().size == 1:
             return self._get_leaf_counts(fvs)
-        elif level == self.max_depth:
+        elif level > self.max_depth:
             return self._get_leaf_counts(fvs)
 
         split_value, split_feature, new_split_score = self._calculate_stump_split(fvs)
