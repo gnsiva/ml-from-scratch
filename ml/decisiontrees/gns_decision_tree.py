@@ -1,7 +1,21 @@
+import math
 from typing import List, Tuple, Dict, Any, Union
 
 import pandas as pd
 import logging
+
+"""
+Questions:
+
+Entropy
+=======
+How should entropy be normalised? 
+The max value is 1, you sum them for each class.
+https://www.saedsayad.com/decision_tree.htm
+
+The implementations seem to use -p log2 p, without q, that doesn't make a symmetric distribution
+It changes the point of inflection as well from 0.5 to ~0.35
+"""
 
 
 class GNSDecisionTreeClassifier:
@@ -22,6 +36,8 @@ class GNSDecisionTreeClassifier:
 
         if criterion == "gini":
             self.criterion = self._calculate_gini_gain
+        # elif criterion == "entropy":
+        #     self.criterion = self._calculate_entropy
         else:
             raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
@@ -43,6 +59,43 @@ class GNSDecisionTreeClassifier:
 
         gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
         return gini
+
+    @staticmethod
+    def _calculate_entropy(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
+        def calc_branch_entropy(branch):
+            total = sum(branch.values())
+            n_classes = len(branch)
+            entropy = 0
+            for v, count in branch.items():
+                if count > 0:
+                    p = (count / total)
+                    q = 1 - p
+                    if q != 0:
+                        # this stops log(0), and as q goes to 0 the entropy becomes 0
+                        entropy += (- p * math.log2(p) - q * math.log2(q)) / n_classes
+            return entropy, total
+
+        left_entropy, left_n = calc_branch_entropy(left_branch)
+        right_entropy, right_n = calc_branch_entropy(right_branch)
+        n = left_n + right_n
+
+        entropy = (left_entropy * left_n / n) + (right_entropy * right_n / n)
+        return entropy
+
+    # @staticmethod
+    # def _calculate_information_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
+    #     # key is class, value is count
+    #     overall_class_counts = {}
+    #     total = 0
+    #     for klass in left_branch.keys():
+    #         v = left_branch[klass]
+    #         v += right_branch.get(klass, 0)
+    #         overall_class_counts[klass] = v
+    #         total += v
+
+
+
+
 
     @staticmethod
     def _calculate_gini_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
