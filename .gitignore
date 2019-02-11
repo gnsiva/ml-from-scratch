@@ -8,6 +8,7 @@
 .cov2emacs.log
 derby.log
 metastore_db/
+books
 
 .cache/
 \.pytest_cache/v/cache/

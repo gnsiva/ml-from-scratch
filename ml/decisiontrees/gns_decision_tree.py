@@ -15,6 +15,20 @@ https://www.saedsayad.com/decision_tree.htm
 
 The implementations seem to use -p log2 p, without q, that doesn't make a symmetric distribution
 It changes the point of inflection as well from 0.5 to ~0.35
+without q is used for multi-class problems, still don't get the movement of the mid-point
+the idea being for each class you add on another -p log2 p, just like the q example is for th negative class
+
+This had a good explanation of what is going on with the information gain calculation
+machine learning (1997).pdf
+page 70
+
+Todos
+=====
+tests for max depth, min_samples_*
+min_impurity_reduction for regression
+creating a base tree class
+calculate_gini and entropy should be updated to work with pd.Series as input
+start score should be None rather than arbitrarily small number
 """
 
 
@@ -98,12 +112,14 @@ class GNSDecisionTreeClassifier:
     #         total += v
 
     @staticmethod
-    def _calculate_gini_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
+    def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        left_branch = dict(left_branch.value_counts())
+        right_branch = dict(right_branch.value_counts())
         return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
 
     def _calculate_stump_split(self, fvs):
         max_feature = None
-        max_split_score = 0
+        max_split_score = -1e10
         max_split_value = None
 
         for feature in self.X_cols:
@@ -115,8 +131,8 @@ class GNSDecisionTreeClassifier:
                 split_v = unique_feature[split_i] + ((unique_feature[split_i + 1] - unique_feature[split_i]) / 2)
 
                 mask = fvs[feature] > split_v
-                left = dict(fvs[mask][self.y_col].value_counts())
-                right = dict(fvs[~mask][self.y_col].value_counts())
+                left = fvs[mask][self.y_col]
+                right = fvs[~mask][self.y_col]
 
                 gain = self.criterion(left, right)
 
@@ -136,7 +152,7 @@ class GNSDecisionTreeClassifier:
             tree: Dict[str, Any],
             splits: List[Tuple[float, str]],
             level: int = 0,
-            split_score: float = 0) -> Union[dict, Tuple[Dict[str, Any], Tuple[float, str]]]:
+            split_score: float = -1e6) -> Union[dict, Tuple[Dict[str, Any], Tuple[float, str]]]:
 
         # stopping criteria
         if fvs.shape[0] <= self.min_samples_split:
@@ -205,3 +221,43 @@ class GNSDecisionTreeClassifier:
     def predict(self, fvs: pd.DataFrame):
         preds = self.predict_counts(fvs)
         return preds.map(lambda d: max(d, key=d.get))
+
+
+class GNSDecisionTreeRegressor(GNSDecisionTreeClassifier):
+    def __init__(
+            self,
+            X_cols: List[str],
+            y_col: str,
+            criterion: str = 'mse',
+            max_depth: int = 10,
+            min_samples_leaf: int = 1,
+            min_samples_split: int = 2):
+
+        super().__init__(
+            X_cols=X_cols,
+            y_col=y_col,
+            max_depth=max_depth,
+            min_samples_leaf=min_samples_leaf,
+            min_samples_split=min_samples_split,
+            min_impurity_reduction=0  # TODO check this
+        )
+        if criterion == "mse":
+            self.criterion = self._mse_score
+        else:
+            raise ValueError("Unknown criterion '{}' passed".format(criterion))
+
+    @staticmethod
+    def _mse(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        output = 0
+        n = left_branch.shape[0] + right_branch.shape[0]
+
+        for br in [left_branch, right_branch]:
+            mean = br.mean()
+            mse = ((br - mean)**2).sum()
+            output += mse * (br.shape[0] / n)
+
+        return output
+
+    @staticmethod
+    def _mse_score(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        return -1 * GNSDecisionTreeRegressor._mse(left_branch, right_branch)

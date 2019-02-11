@@ -3,9 +3,9 @@ from unittest import TestCase
 import seaborn as sns
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from ml.decisiontrees.gns_decision_tree import GNSDecisionTreeClassifier
+from ml.decisiontrees.gns_decision_tree import GNSDecisionTreeClassifier, GNSDecisionTreeRegressor
 
 
 class GNSDecisionTreeClassifierTest(TestCase):
@@ -115,3 +115,88 @@ class GNSDecisionTreeClassifierTest(TestCase):
     #
     #     # ours should be within 2 % accuracy of sklearn implementation
     #     self.assertGreater(accuracy, sklearn_accuracy - 0.02)
+
+
+class GNSDecisionTreeRegressorTest(TestCase):
+    def setUp(self):
+        df = sns.load_dataset("iris")
+        df.loc[df["species"] == "virginica", "species_i"] = 0
+        df.loc[df["species"] == "versicolor", "species_i"] = 1
+        df.loc[df["species"] == "setosa", "species_i"] = 2
+
+        self.df = df
+        self.X_cols = df.columns[:-2].tolist()
+        self.y_col = "species_i"
+
+    def test_mse(self):
+        a = pd.Series([3, 3, 3])
+        b = pd.Series([3, 3, 3])
+        print(GNSDecisionTreeRegressor._mse(a, b))
+
+    def test_prediction_one_var(self):
+        df = pd.DataFrame({
+            "y": [0, 1, 1],
+            "x": [4, 6, 6]
+        })
+        X_cols = ["x"]
+
+        dt = GNSDecisionTreeRegressor(X_cols, "y")
+        dt = dt.fit(df)
+        p = dt.predict(df)
+
+        self.assertAlmostEqual(p[0], 0)
+        self.assertAlmostEqual(p[1], 1)
+        self.assertAlmostEqual(p[2], 1)
+
+        sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
+        sklearn_dt = sklearn_dt.fit(df[X_cols], df["y"])
+        sklearn_p = sklearn_dt.predict(df[X_cols])
+
+        self.assertAlmostEqual(sklearn_p[0], 0)
+        self.assertAlmostEqual(sklearn_p[1], 1)
+        self.assertAlmostEqual(sklearn_p[2], 1)
+
+    def test_prediction_two_vars(self):
+        df = pd.DataFrame({
+            "y": [0, 1, 1],
+            "x": [4, 6, 6],
+            "z": [3, 3, 3]
+        })
+
+        X_cols = ["x", "z"]
+
+        dt = GNSDecisionTreeRegressor(X_cols, "y")
+        dt = dt.fit(df)
+        p = dt.predict(df)
+
+        self.assertAlmostEqual(p[0], 0)
+        self.assertAlmostEqual(p[1], 1)
+        self.assertAlmostEqual(p[2], 1)
+
+        sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
+        sklearn_dt = sklearn_dt.fit(df[X_cols], df["y"])
+        sklearn_p = sklearn_dt.predict(df[X_cols])
+
+        self.assertAlmostEqual(sklearn_p[0], 0)
+        self.assertAlmostEqual(sklearn_p[1], 1)
+        self.assertAlmostEqual(sklearn_p[2], 1)
+
+    def test_prediction_real_data(self):
+        df = self.df[self.df.species.isin(["versicolor", "virginica"])].copy()
+        train, test = train_test_split(df, random_state=44)
+
+        # check model
+        dt = GNSDecisionTreeRegressor(self.X_cols, self.y_col, max_depth=10)
+
+        dt = dt.fit(train)
+        brier_score = ((test[self.y_col] - dt.predict(test))**2).mean()
+        print(brier_score)
+
+        sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
+        sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
+        sklearn_p = sklearn_dt.predict(test[self.X_cols])
+        sklearn_brier_score = ((test[self.y_col] - sklearn_p) ** 2).mean()
+
+        print(sklearn_brier_score)
+
+        self.assertLess(brier_score, sklearn_brier_score + 0.02)
