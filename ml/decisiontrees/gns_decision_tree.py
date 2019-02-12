@@ -31,7 +31,7 @@ Todo
 [X] update entropy function to be multi-class
 [ ] calculate_gini and entropy should be updated to work with pd.Series as input
 [ ] add alternate gini function 
-[ ] add information gain 
+[X] add information gain 
 [ ] tests for max depth, min_samples_*
 [ ] min_impurity_reduction for regression
 [ ] creating a base tree class
@@ -63,7 +63,7 @@ class GNSDecisionTreeClassifier:
         if criterion == "gini":
             self.criterion = self._calculate_gini_gain
         elif criterion == "entropy":
-            self.criterion = self._calculate_entropy
+            self.criterion = self._calculate_information_gain
         else:
             raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
@@ -105,16 +105,9 @@ class GNSDecisionTreeClassifier:
         entropy = (left_entropy * left_n / n) + (right_entropy * right_n / n)
         return entropy
 
-    # @staticmethod
-    # def _calculate_information_gain(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
-    #     # key is class, value is count
-    #     overall_class_counts = {}
-    #     total = 0
-    #     for klass in left_branch.keys():
-    #         v = left_branch[klass]
-    #         v += right_branch.get(klass, 0)
-    #         overall_class_counts[klass] = v
-    #         total += v
+    @staticmethod
+    def _calculate_information_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        return 1 - GNSDecisionTreeClassifier._calculate_entropy(left_branch, right_branch)
 
     @staticmethod
     def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
