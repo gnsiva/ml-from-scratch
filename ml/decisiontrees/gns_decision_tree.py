@@ -30,14 +30,13 @@ Todo
 [X] start score should be None rather than arbitrarily small number
 [X] fix predict regression
 [X] update entropy function to be multi-class
-[ ] calculate_gini and entropy should be updated to work with pd.Series as input
-[ ] add alternate gini function 
+[X] calculate_gini and entropy should be updated to work with pd.Series as input
+[X] add alternate gini function 
 [X] add information gain 
 [ ] tests for max depth, min_samples_*
 [ ] min_impurity_reduction for regression
-[ ] creating a base tree class
+[X] creating a base tree class
 [ ] predict probability for classifier
-[ ] run it on ww training fvs
 """
 
 class _BaseGNSDecisionTree(ABC):
@@ -190,39 +189,12 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
     def _get_criterion_function(self, criterion: str):
         if criterion == "gini":
             return self._calculate_gini_gain
-        elif criterion == "gini2":
-            return self._calculate_gini_gain2
         elif criterion == "entropy":
             return self._calculate_information_gain
         raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
     @staticmethod
-    def _calculate_gini(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
-        """Pass dictionary of counts"""
-
-        def calc_branch_gini(branch):
-            total = sum(branch.values())
-            impurity = 0
-            for v, count in branch.items():
-                p = (count / total)
-                impurity += p * (1 - p)
-            return impurity, total
-
-        left_impurity, left_n = calc_branch_gini(left_branch)
-        right_impurity, right_n = calc_branch_gini(right_branch)
-        n = left_n + right_n
-
-        gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
-        return gini
-
-    @staticmethod
-    def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
-        left_branch = dict(left_branch.value_counts())
-        right_branch = dict(right_branch.value_counts())
-        return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
-
-    @staticmethod
-    def _calculate_gini2(left_branch: pd.Series, right_branch: pd.Series) -> float:
+    def _calculate_gini(left_branch: pd.Series, right_branch: pd.Series) -> float:
         def calc_branch_gini(branch):
             total = len(branch)
             purity = 0
@@ -243,8 +215,8 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
         return gini
 
     @staticmethod
-    def _calculate_gini_gain2(left_branch: pd.Series, right_branch: pd.Series) -> float:
-        return 1 - GNSDecisionTreeClassifier._calculate_gini2(left_branch, right_branch)
+    def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
 
     @staticmethod
     def _calculate_entropy(left_branch: pd.Series, right_branch: pd.Series) -> float:

@@ -59,15 +59,18 @@ class GNSDecisionTreeClassifierTest(TestCase):
 
     def test_gini_known_values(self):
         # full impurity
-        gini = GNSDecisionTreeClassifier._calculate_gini({0: 2, 1: 2}, {0: 2, 1: 2})
+        gini = GNSDecisionTreeClassifier._calculate_gini(
+            pd.Series([0, 0, 1, 1]), pd.Series([0, 0, 1, 1]))
         self.assertAlmostEqual(gini, 0.5)
 
         # totally pure split
-        gini = GNSDecisionTreeClassifier._calculate_gini({0: 2, 1: 0}, {0: 0, 1: 2})
+        gini = GNSDecisionTreeClassifier._calculate_gini(
+            pd.Series([0, 0]), pd.Series([1, 1]))
         self.assertAlmostEqual(gini, 0)
 
         # flipped order
-        gini = GNSDecisionTreeClassifier._calculate_gini({0: 0, 1: 2}, {0: 2, 1: 0})
+        gini = GNSDecisionTreeClassifier._calculate_gini(
+            pd.Series([1, 1]), pd.Series([0, 0]))
         self.assertAlmostEqual(gini, 0)
 
     def test_entropy_known_values(self):
@@ -127,7 +130,6 @@ class GNSDecisionTreeClassifierTest(TestCase):
         dt = dt.fit(train)
         accuracy = (test[self.y_col] == dt.predict(test)).mean()
         self.assertGreater(accuracy, 0.85)
-        print(accuracy)
 
         # compare to sklearn implementation
         sklearn_dt = DecisionTreeClassifier(max_depth=10, min_impurity_decrease=1e-6, criterion="entropy")
@@ -137,59 +139,6 @@ class GNSDecisionTreeClassifierTest(TestCase):
 
         # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
         self.assertGreater(accuracy, sklearn_accuracy - 0.02)
-
-    def test_binary_classification_gini2(self):
-        df = self.df[self.df.species.isin(["versicolor", "virginica"])].copy()
-        train, test = train_test_split(df, random_state=44)
-
-        # check model
-        dt = GNSDecisionTreeClassifier(self.X_cols, self.y_col, criterion="gini2")
-        dt = dt.fit(train)
-        accuracy = (test[self.y_col] == dt.predict(test)).mean()
-        self.assertGreater(accuracy, 0.85)
-
-        # compare to sklearn implementation
-        sklearn_dt = DecisionTreeClassifier(max_depth=10, min_impurity_decrease=1e-6)
-        sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
-
-        sklearn_accuracy = (test[self.y_col] == sklearn_dt.predict(test[self.X_cols])).mean()
-
-        # ours should be within 2 % accuracy of sklearn implementation
-        self.assertGreater(accuracy, sklearn_accuracy - 0.02)
-
-    def test_multiclass_classification_gini2(self):
-        train, test = train_test_split(self.df, random_state=46)
-
-        # check model
-        dt = GNSDecisionTreeClassifier(self.X_cols, self.y_col, criterion="gini2")
-        dt = dt.fit(train)
-        accuracy = (test[self.y_col] == dt.predict(test)).mean()
-        self.assertGreater(accuracy, 0.85)
-
-        # compare to sklearn implementation
-        sklearn_dt = DecisionTreeClassifier(max_depth=10, min_impurity_decrease=1e-6)
-        sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
-
-        sklearn_accuracy = (test[self.y_col] == sklearn_dt.predict(test[self.X_cols])).mean()
-
-        # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
-        self.assertGreater(accuracy, sklearn_accuracy - 0.02)
-
-    def test_gini2_known_values(self):
-        # full impurity
-        gini = GNSDecisionTreeClassifier._calculate_gini2(
-            pd.Series([0, 0, 1, 1]), pd.Series([0, 0, 1, 1]))
-        self.assertAlmostEqual(gini, 0.5)
-
-        # totally pure split
-        gini = GNSDecisionTreeClassifier._calculate_gini2(
-            pd.Series([0, 0]), pd.Series([1, 1]))
-        self.assertAlmostEqual(gini, 0)
-
-        # flipped order
-        gini = GNSDecisionTreeClassifier._calculate_gini2(
-            pd.Series([1, 1]), pd.Series([0, 0]))
-        self.assertAlmostEqual(gini, 0)
 
 
 class GNSDecisionTreeRegressorTest(TestCase):
@@ -275,41 +224,4 @@ class GNSDecisionTreeRegressorTest(TestCase):
         sklearn_p = sklearn_dt.predict(test[self.X_cols])
         sklearn_brier_score = ((test[self.y_col] - sklearn_p) ** 2).mean()
 
-        # print(sklearn_brier_score)
-
         self.assertLess(brier_score, sklearn_brier_score + 0.02)
-
-    # def test_predict_with_ww_data(self):
-    #     fn = "../../books/190122-train-fvs-no-dev-avgs-no-lax3.p.gz"
-    #     fvs = pd.read_pickle(fn)
-    #     rids = fvs[["rid"]].sample(frac=0.01, random_state=1).rid.tolist()
-    #     fvs = fvs[fvs.rid.isin(rids)]
-    #     train = fvs[fvs.dataset == "train"]
-    #     test = fvs[fvs.dataset != "train"]
-    #
-    #     X_cols = [
-    #         "local_hour",
-    #         "weekday",
-    #         "num",
-    #         "pstid",
-    #         'pstid_2_total_num',
-    #         'pstid_2_rid_count',
-    #         'pstid_4_total_num',
-    #         'pstid_4_rid_count',
-    #         'total_num',
-    #         'total_rid_count'
-    #     ]
-    #
-    #     y_col = "aspace"
-    #
-    #     dt = GNSDecisionTreeRegressor(X_cols, y_col, max_depth=10)
-    #     dt = dt.fit(fvs)
-    #     brier_score = ((test[y_col] - dt.predict(test)) ** 2).mean()
-    #     print(brier_score)
-    #
-    #     # check against sklearn implementation
-    #     sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
-    #     sklearn_dt = sklearn_dt.fit(train[X_cols], train[y_col])
-    #     sklearn_p = sklearn_dt.predict(test[X_cols])
-    #     sklearn_brier_score = ((test[y_col] - sklearn_p) ** 2).mean()
-    #     print(sklearn_brier_score)
