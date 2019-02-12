@@ -7,23 +7,11 @@ import pandas as pd
 import numpy as np
 
 """
-Questions:
-
-Entropy
-=======
-How should entropy be normalised? 
-The max value is 1, you sum them for each class.
-https://www.saedsayad.com/decision_tree.htm
-
-The implementations seem to use -p log2 p, without q, that doesn't make a symmetric distribution
-It changes the point of inflection as well from 0.5 to ~0.35
-without q is used for multi-class problems, still don't get the movement of the mid-point
-the idea being for each class you add on another -p log2 p, just like the q example is for th negative class
+ML club implementation of decision trees.
 
 This had a good explanation of what is going on with the information gain calculation
 machine learning (1997).pdf
 page 70
-Also data science from scratch page 289
 
 Todo
 ====
@@ -32,7 +20,7 @@ Todo
 [X] update entropy function to be multi-class
 [X] calculate_gini and entropy should be updated to work with pd.Series as input
 [X] add alternate gini function 
-[X] add information gain 
+[ ] add proper information gain 
 [ ] tests for max depth, min_samples_*
 [ ] min_impurity_reduction for regression
 [X] creating a base tree class
