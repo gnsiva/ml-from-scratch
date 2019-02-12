@@ -175,6 +175,22 @@ class GNSDecisionTreeClassifierTest(TestCase):
         # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
         self.assertGreater(accuracy, sklearn_accuracy - 0.02)
 
+    def test_gini2_known_values(self):
+        # full impurity
+        gini = GNSDecisionTreeClassifier._calculate_gini2(
+            pd.Series([0, 0, 1, 1]), pd.Series([0, 0, 1, 1]))
+        self.assertAlmostEqual(gini, 0.5)
+
+        # totally pure split
+        gini = GNSDecisionTreeClassifier._calculate_gini2(
+            pd.Series([0, 0]), pd.Series([1, 1]))
+        self.assertAlmostEqual(gini, 0)
+
+        # flipped order
+        gini = GNSDecisionTreeClassifier._calculate_gini2(
+            pd.Series([1, 1]), pd.Series([0, 0]))
+        self.assertAlmostEqual(gini, 0)
+
 
 class GNSDecisionTreeRegressorTest(TestCase):
     def setUp(self):

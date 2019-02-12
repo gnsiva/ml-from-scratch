@@ -191,7 +191,7 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
         if criterion == "gini":
             return self._calculate_gini_gain
         elif criterion == "gini2":
-            return self._calculate_gini2
+            return self._calculate_gini_gain2
         elif criterion == "entropy":
             return self._calculate_information_gain
         raise ValueError("Unknown criterion '{}' passed".format(criterion))
@@ -216,6 +216,12 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
         return gini
 
     @staticmethod
+    def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        left_branch = dict(left_branch.value_counts())
+        right_branch = dict(right_branch.value_counts())
+        return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
+
+    @staticmethod
     def _calculate_gini2(left_branch: pd.Series, right_branch: pd.Series) -> float:
         def calc_branch_gini(branch):
             total = len(branch)
@@ -235,7 +241,11 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
 
         gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
         # return gini
-        return 1 - gini
+        return gini
+
+    @staticmethod
+    def _calculate_gini_gain2(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        return 1 - GNSDecisionTreeClassifier._calculate_gini2(left_branch, right_branch)
 
     @staticmethod
     def _calculate_entropy(left_branch: pd.Series, right_branch: pd.Series) -> float:
@@ -258,12 +268,6 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
     @staticmethod
     def _calculate_information_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
         return 1 - GNSDecisionTreeClassifier._calculate_entropy(left_branch, right_branch)
-
-    @staticmethod
-    def _calculate_gini_gain(left_branch: pd.Series, right_branch: pd.Series) -> float:
-        left_branch = dict(left_branch.value_counts())
-        right_branch = dict(right_branch.value_counts())
-        return 1 - GNSDecisionTreeClassifier._calculate_gini(left_branch, right_branch)
 
     def predict(self, fvs: pd.DataFrame):
         preds = self.predict_counts(fvs)
