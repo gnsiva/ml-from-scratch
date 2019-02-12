@@ -218,9 +218,9 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
     @staticmethod
     def _calculate_gini2(left_branch: pd.Series, right_branch: pd.Series) -> float:
         def calc_branch_gini(branch):
-            total = sum(branch.values())
+            total = len(branch)
             purity = 0
-            for v, count in branch.items():
+            for v, count in zip(*np.unique(branch, return_counts=True)):
                 p = (count / total)
                 purity += p * p
 
@@ -229,8 +229,8 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
             impurity = 1 - purity
             return impurity, total
 
-        left_impurity, left_n = calc_branch_gini(dict(left_branch.value_counts()))
-        right_impurity, right_n = calc_branch_gini(dict(right_branch.value_counts()))
+        left_impurity, left_n = calc_branch_gini(left_branch)
+        right_impurity, right_n = calc_branch_gini(right_branch)
         n = left_n + right_n
 
         gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
