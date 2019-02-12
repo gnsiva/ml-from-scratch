@@ -192,13 +192,14 @@ class GNSDecisionTreeRegressorTest(TestCase):
 
         dt = dt.fit(train)
         brier_score = ((test[self.y_col] - dt.predict(test))**2).mean()
-        print(brier_score)
+        # print(brier_score)
 
+        # check against sklearn implementation
         sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
         sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
         sklearn_p = sklearn_dt.predict(test[self.X_cols])
         sklearn_brier_score = ((test[self.y_col] - sklearn_p) ** 2).mean()
 
-        print(sklearn_brier_score)
+        # print(sklearn_brier_score)
 
         self.assertLess(brier_score, sklearn_brier_score + 0.02)

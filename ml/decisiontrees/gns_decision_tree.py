@@ -24,11 +24,16 @@ page 70
 
 Todos
 =====
-tests for max depth, min_samples_*
-min_impurity_reduction for regression
-creating a base tree class
-calculate_gini and entropy should be updated to work with pd.Series as input
-start score should be None rather than arbitrarily small number
+[X] start score should be None rather than arbitrarily small number
+[X] fix predict regression
+[ ] calculate_gini and entropy should be updated to work with pd.Series as input
+[ ] add alternate gini function 
+[ ] add information gain 
+[ ] tests for max depth, min_samples_*
+[ ] min_impurity_reduction for regression
+[ ] creating a base tree class
+[ ] predict probability for classifier
+[ ] run it on ww training fvs
 """
 
 
@@ -214,12 +219,6 @@ class GNSDecisionTreeClassifier:
     def predict_counts(self, fvs: pd.DataFrame):
         return fvs.apply(lambda fv: self._predict_one(fv, self.tree), axis=1)
 
-    def predict_probability(self, fvs: pd.DataFrame):
-        preds = self.predict_counts(fvs)
-        for d in preds:
-            d.keys()
-        pass
-
     def predict(self, fvs: pd.DataFrame):
         preds = self.predict_counts(fvs)
         return preds.map(lambda d: max(d, key=d.get))
@@ -263,3 +262,12 @@ class GNSDecisionTreeRegressor(GNSDecisionTreeClassifier):
     @staticmethod
     def _mse_score(left_branch: pd.Series, right_branch: pd.Series) -> float:
         return -1 * GNSDecisionTreeRegressor._mse(left_branch, right_branch)
+
+    def predict(self, fvs: pd.DataFrame) -> pd.Series:
+        preds = self.predict_counts(fvs)
+
+        def calculate_average(d: Dict[float, int]):
+            total = sum(d.values())
+            return sum([k * (v / total) for k, v in d.items()])
+
+        return preds.map(calculate_average)
