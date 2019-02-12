@@ -21,11 +21,13 @@ the idea being for each class you add on another -p log2 p, just like the q exam
 This had a good explanation of what is going on with the information gain calculation
 machine learning (1997).pdf
 page 70
+Also data science from scratch page 289
 
-Todos
-=====
+Todo
+====
 [X] start score should be None rather than arbitrarily small number
 [X] fix predict regression
+[X] update entropy function to be multi-class
 [ ] calculate_gini and entropy should be updated to work with pd.Series as input
 [ ] add alternate gini function 
 [ ] add information gain 
@@ -87,15 +89,11 @@ class GNSDecisionTreeClassifier:
     def _calculate_entropy(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
         def calc_branch_entropy(branch):
             total = sum(branch.values())
-            n_classes = len(branch)
             entropy = 0
             for v, count in branch.items():
                 if count > 0:
                     p = (count / total)
-                    q = 1 - p
-                    if q != 0:
-                        # this stops log(0), and as q goes to 0 the entropy becomes 0
-                        entropy += (- p * math.log2(p) - q * math.log2(q)) / n_classes
+                    entropy += - p * math.log2(p)
             return entropy, total
 
         left_entropy, left_n = calc_branch_entropy(left_branch)
