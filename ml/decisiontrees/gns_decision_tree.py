@@ -240,7 +240,6 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
         n = left_n + right_n
 
         gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
-        # return gini
         return gini
 
     @staticmethod
@@ -291,7 +290,7 @@ class GNSDecisionTreeRegressor(_BaseGNSDecisionTree):
             max_depth=max_depth,
             min_samples_leaf=min_samples_leaf,
             min_samples_split=min_samples_split,
-            min_impurity_reduction=0  # TODO check this
+            min_impurity_reduction=0
         )
 
     def _get_criterion_function(self, criterion: str):
