@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple, Dict, Any, Union
+from typing import List, Tuple, Dict, Any, Union, Optional
 
 import pandas as pd
 import logging
@@ -119,7 +119,7 @@ class GNSDecisionTreeClassifier:
 
     def _calculate_stump_split(self, fvs):
         max_feature = None
-        max_split_score = -1e10
+        max_split_score = None
         max_split_value = None
 
         for feature in self.X_cols:
@@ -136,7 +136,7 @@ class GNSDecisionTreeClassifier:
 
                 gain = self.criterion(left, right)
 
-                if gain > max_split_score:
+                if max_split_score is None or gain > max_split_score:
                     max_split_score = gain
                     max_split_value = split_v
                     max_feature = feature
@@ -152,7 +152,7 @@ class GNSDecisionTreeClassifier:
             tree: Dict[str, Any],
             splits: List[Tuple[float, str]],
             level: int = 0,
-            split_score: float = -1e6) -> Union[dict, Tuple[Dict[str, Any], Tuple[float, str]]]:
+            split_score: Optional[float] = None) -> Union[dict, Tuple[Dict[str, Any], Tuple[float, str]]]:
 
         # stopping criteria
         if fvs.shape[0] <= self.min_samples_split:
@@ -165,8 +165,10 @@ class GNSDecisionTreeClassifier:
             return self._get_leaf_counts(fvs)
 
         split_value, split_feature, new_split_score = self._calculate_stump_split(fvs)
-        if self.min_impurity_reduction > (new_split_score - split_score):
-            return self._get_leaf_counts(fvs)
+        if split_score is not None:
+            improvement = new_split_score - split_score
+            if self.min_impurity_reduction > improvement:
+                return self._get_leaf_counts(fvs)
 
         splits.append((split_value, split_feature))
         mask = fvs[split_feature] < split_value

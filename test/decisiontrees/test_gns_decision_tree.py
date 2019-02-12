@@ -130,8 +130,10 @@ class GNSDecisionTreeRegressorTest(TestCase):
 
     def test_mse(self):
         a = pd.Series([3, 3, 3])
-        b = pd.Series([3, 3, 3])
-        print(GNSDecisionTreeRegressor._mse(a, b))
+        self.assertEqual(GNSDecisionTreeRegressor._mse(a, a), 0)
+
+        a = pd.Series([2, 4])
+        self.assertEqual(GNSDecisionTreeRegressor._mse(a, a), 2)
 
     def test_prediction_one_var(self):
         df = pd.DataFrame({
