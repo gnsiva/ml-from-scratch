@@ -225,3 +225,38 @@ class GNSDecisionTreeRegressorTest(TestCase):
         # print(sklearn_brier_score)
 
         self.assertLess(brier_score, sklearn_brier_score + 0.02)
+
+    # def test_predict_with_ww_data(self):
+    #     fn = "../../books/190122-train-fvs-no-dev-avgs-no-lax3.p.gz"
+    #     fvs = pd.read_pickle(fn)
+    #     rids = fvs[["rid"]].sample(frac=0.01, random_state=1).rid.tolist()
+    #     fvs = fvs[fvs.rid.isin(rids)]
+    #     train = fvs[fvs.dataset == "train"]
+    #     test = fvs[fvs.dataset != "train"]
+    #
+    #     X_cols = [
+    #         "local_hour",
+    #         "weekday",
+    #         "num",
+    #         "pstid",
+    #         'pstid_2_total_num',
+    #         'pstid_2_rid_count',
+    #         'pstid_4_total_num',
+    #         'pstid_4_rid_count',
+    #         'total_num',
+    #         'total_rid_count'
+    #     ]
+    #
+    #     y_col = "aspace"
+    #
+    #     dt = GNSDecisionTreeRegressor(X_cols, y_col, max_depth=10)
+    #     dt = dt.fit(fvs)
+    #     brier_score = ((test[y_col] - dt.predict(test)) ** 2).mean()
+    #     print(brier_score)
+    #
+    #     # check against sklearn implementation
+    #     sklearn_dt = DecisionTreeRegressor(max_depth=10, min_impurity_decrease=1e-6)
+    #     sklearn_dt = sklearn_dt.fit(train[X_cols], train[y_col])
+    #     sklearn_p = sklearn_dt.predict(test[X_cols])
+    #     sklearn_brier_score = ((test[y_col] - sklearn_p) ** 2).mean()
+    #     print(sklearn_brier_score)
