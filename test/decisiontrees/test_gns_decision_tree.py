@@ -138,6 +138,43 @@ class GNSDecisionTreeClassifierTest(TestCase):
         # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
         self.assertGreater(accuracy, sklearn_accuracy - 0.02)
 
+    def test_binary_classification_gini2(self):
+        df = self.df[self.df.species.isin(["versicolor", "virginica"])].copy()
+        train, test = train_test_split(df, random_state=44)
+
+        # check model
+        dt = GNSDecisionTreeClassifier(self.X_cols, self.y_col, criterion="gini2")
+        dt = dt.fit(train)
+        accuracy = (test[self.y_col] == dt.predict(test)).mean()
+        self.assertGreater(accuracy, 0.85)
+
+        # compare to sklearn implementation
+        sklearn_dt = DecisionTreeClassifier(max_depth=10, min_impurity_decrease=1e-6)
+        sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
+
+        sklearn_accuracy = (test[self.y_col] == sklearn_dt.predict(test[self.X_cols])).mean()
+
+        # ours should be within 2 % accuracy of sklearn implementation
+        self.assertGreater(accuracy, sklearn_accuracy - 0.02)
+
+    def test_multiclass_classification_gini2(self):
+        train, test = train_test_split(self.df, random_state=46)
+
+        # check model
+        dt = GNSDecisionTreeClassifier(self.X_cols, self.y_col, criterion="gini2")
+        dt = dt.fit(train)
+        accuracy = (test[self.y_col] == dt.predict(test)).mean()
+        self.assertGreater(accuracy, 0.85)
+
+        # compare to sklearn implementation
+        sklearn_dt = DecisionTreeClassifier(max_depth=10, min_impurity_decrease=1e-6)
+        sklearn_dt = sklearn_dt.fit(train[self.X_cols], train[self.y_col])
+
+        sklearn_accuracy = (test[self.y_col] == sklearn_dt.predict(test[self.X_cols])).mean()
+
+        # ours should be within 2 % accuracy of sklearn implementation (not on first split seed tried)
+        self.assertGreater(accuracy, sklearn_accuracy - 0.02)
+
 
 class GNSDecisionTreeRegressorTest(TestCase):
     def setUp(self):

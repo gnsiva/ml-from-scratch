@@ -187,10 +187,11 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
             min_impurity_reduction=min_impurity_reduction
         )
 
-
     def _get_criterion_function(self, criterion: str):
         if criterion == "gini":
             return self._calculate_gini_gain
+        elif criterion == "gini2":
+            return self._calculate_gini2
         elif criterion == "entropy":
             return self._calculate_information_gain
         raise ValueError("Unknown criterion '{}' passed".format(criterion))
@@ -215,12 +216,33 @@ class GNSDecisionTreeClassifier(_BaseGNSDecisionTree):
         return gini
 
     @staticmethod
+    def _calculate_gini2(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        def calc_branch_gini(branch):
+            total = sum(branch.values())
+            purity = 0
+            for v, count in branch.items():
+                p = (count / total)
+                purity += p * p
+
+            # 50:50 - purity = .5
+            # 100:0 - purity = 1
+            impurity = 1 - purity
+            return impurity, total
+
+        left_impurity, left_n = calc_branch_gini(dict(left_branch.value_counts()))
+        right_impurity, right_n = calc_branch_gini(dict(right_branch.value_counts()))
+        n = left_n + right_n
+
+        gini = (left_impurity * left_n / n) + (right_impurity * right_n / n)
+        # return gini
+        return 1 - gini
+
+    @staticmethod
     def _calculate_entropy(left_branch: pd.Series, right_branch: pd.Series) -> float:
         def calc_branch_entropy(branch: pd.Series):
             total = len(branch)
             entropy = 0
-            values, counts = np.unique(branch, return_counts=True)
-            for v, count in zip(values, counts):
+            for v, count in zip(*np.unique(branch, return_counts=True)):
                 if count > 0:
                     p = (count / total)
                     entropy += - p * math.log2(p)
