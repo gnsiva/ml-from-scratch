@@ -1,8 +1,9 @@
 import math
 from typing import List, Tuple, Dict, Any, Union, Optional
+import logging
 
 import pandas as pd
-import logging
+import numpy as np
 
 """
 Questions:
@@ -61,8 +62,8 @@ class GNSDecisionTreeClassifier:
 
         if criterion == "gini":
             self.criterion = self._calculate_gini_gain
-        # elif criterion == "entropy":
-        #     self.criterion = self._calculate_entropy
+        elif criterion == "entropy":
+            self.criterion = self._calculate_entropy
         else:
             raise ValueError("Unknown criterion '{}' passed".format(criterion))
 
@@ -86,11 +87,12 @@ class GNSDecisionTreeClassifier:
         return gini
 
     @staticmethod
-    def _calculate_entropy(left_branch: Dict[int, int], right_branch: Dict[int, int]) -> float:
-        def calc_branch_entropy(branch):
-            total = sum(branch.values())
+    def _calculate_entropy(left_branch: pd.Series, right_branch: pd.Series) -> float:
+        def calc_branch_entropy(branch: pd.Series):
+            total = len(branch)
             entropy = 0
-            for v, count in branch.items():
+            values, counts = np.unique(branch, return_counts=True)
+            for v, count in zip(values, counts):
                 if count > 0:
                     p = (count / total)
                     entropy += - p * math.log2(p)
