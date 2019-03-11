@@ -1,12 +1,12 @@
 import logging
 import math
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 from scipy import stats
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import numpy as np
 import pandas as pd
-#from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 
 """
 Notes:
@@ -16,13 +16,15 @@ Notes:
 
 """
 
-class RandomForestRegressor:
+
+class _BaseRandomForest:
     def __init__(
             self,
             n_estimators: int = 10,
             criterion: str = "mse",
             max_features: float = 1.0,
-            bagging: bool = True):
+            bagging: bool = True,
+            tree_params: Optional[Dict] = None):
 
         # RF parameters
         self.n_estimators = n_estimators
@@ -30,14 +32,12 @@ class RandomForestRegressor:
         self.max_features = max_features
 
         # DT parameters
-        self.tree_parameters = {
-            'criterion': criterion
-        }
+        self.tree_parameters = {'criterion': criterion}
+        if tree_params is not None:
+            self.tree_parameters.update(tree_params)
 
         # Internal parameters
         self.trees = []
-        self.tree_type = "regressor"
-        self.ensemble_reduce_function = "mean"
 
     @staticmethod
     def _subsample_features(X, max_features: int) -> np.ndarray:
@@ -101,8 +101,8 @@ class RandomForestRegressor:
         if isinstance(X, pd.DataFrame):
             X = X.values
 
-        X, feature_indices = RandomForestRegressor._subsample_features(X, n_features)
-        X, y = RandomForestRegressor._sampling(X, y, bagging)
+        X, feature_indices = _BaseRandomForest._subsample_features(X, n_features)
+        X, y = _BaseRandomForest._sampling(X, y, bagging)
 
         if tree_type == "regressor":
             dt = DecisionTreeRegressor(**tree_parameters)
@@ -142,9 +142,9 @@ class RandomForestRegressor:
         predictions = np.zeros((X.shape[0], len(self.trees)))
 
         if isinstance(X, pd.DataFrame):
-            index_function = RandomForestRegressor._index_pandas_columns
+            index_function = _BaseRandomForest._index_pandas_columns
         else:
-            index_function = RandomForestRegressor._index_numpy_columns
+            index_function = _BaseRandomForest._index_numpy_columns
 
         for tree, feature_indices in self.trees:
             p = tree.predict(index_function(X, feature_indices))
@@ -157,3 +157,53 @@ class RandomForestRegressor:
             output = np.mean(predictions, axis=1)
 
         return output
+
+
+class RandomForestRegressor(_BaseRandomForest):
+    def __init__(
+            self,
+            n_estimators: int = 10,
+            criterion: str = "mse",
+            max_features: float = 1.0,
+            bagging: bool = True,
+            tree_params: Optional[Dict] = None):
+
+        # internal parameters
+        self.tree_type = "regressor"
+        self.ensemble_reduce_function = "mean"
+
+        if criterion not in ["mse", "mae"]:
+            raise ValueError("Incompatible criterion '{}' passed to regressor".format(criterion))
+
+        super().__init__(
+            n_estimators=n_estimators,
+            criterion=criterion,
+            max_features=max_features,
+            bagging=bagging,
+            tree_params=tree_params
+        )
+
+
+class RandomForestClassifier(_BaseRandomForest):
+    def __init__(
+            self,
+            n_estimators: int = 10,
+            criterion: str = "gini",
+            max_features: float = 1.0,
+            bagging: bool = True,
+            tree_params: Optional[Dict] = None):
+
+        # internal parameters
+        self.tree_type = "classifier"
+        self.ensemble_reduce_function = "mode"
+
+        if criterion not in ["gini", "entropy"]:
+            raise ValueError("Incompatible criterion '{}' passed to classifier".format(criterion))
+
+        super().__init__(
+            n_estimators=n_estimators,
+            criterion=criterion,
+            max_features=max_features,
+            bagging=bagging,
+            tree_params=tree_params
+        )
