@@ -27,6 +27,7 @@ Todo
 [ ] predict probability for classifier
 """
 
+
 class _BaseGNSDecisionTree(ABC):
     def __init__(
             self,
@@ -134,9 +135,9 @@ class _BaseGNSDecisionTree(ABC):
 
         split_value, split_feature = tree[1]
         if fv[split_feature] < split_value:
-            return GNSDecisionTreeClassifier._predict_one(fv, tree[0]['left'])
+            return _BaseGNSDecisionTree._predict_one(fv, tree[0]['left'])
         else:
-            return GNSDecisionTreeClassifier._predict_one(fv, tree[0]['right'])
+            return _BaseGNSDecisionTree._predict_one(fv, tree[0]['right'])
 
     def fit(self, fvs: pd.DataFrame):
         self.tree = self._fit(
