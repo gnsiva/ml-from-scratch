@@ -146,9 +146,9 @@ class _BaseRandomForest:
         else:
             index_function = _BaseRandomForest._index_numpy_columns
 
-        for tree, feature_indices in self.trees:
+        for i, (tree, feature_indices) in enumerate(self.trees):
             p = tree.predict(index_function(X, feature_indices))
-            predictions[:, 0] = p
+            predictions[:, i] = p
 
         if self.ensemble_reduce_function == "mode":
             mode_result = stats.mode(predictions, axis=1)

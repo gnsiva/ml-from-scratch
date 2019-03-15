@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Optional, List, Any, Tuple, Union
 
+from sklearn.metrics import mean_absolute_error
 from sklearn.tree import DecisionTreeRegressor
 import numpy as np
 import pandas as pd
@@ -68,10 +69,91 @@ class GradientBoostingRegressor:
         return yhat
 
 
+class GradientBoostingMAERegressor:
+    def __init__(
+            self,
+            X_cols: List[str],
+            y_col: str,
+            learning_rate: float = 0.1,
+            criterion: str = "mae",
+            subsample_fraction: float = 1.0,
+            max_features: float = 1.0,
+            n_estimators: int = 10,
+            min_score_improvement: float = 1e-4,
+            tree_params: Optional[Dict] = None):
+
+        self.X_cols = X_cols
+        self.y_col = y_col
+        self.learning_rate = learning_rate
+        self.criterion = criterion
+        self.subsample_fraction = subsample_fraction
+        self.max_features = max_features
+        self.n_estimators = n_estimators
+        self.min_score_improvement = min_score_improvement
+
+        self.tree_params = {}
+        if tree_params:
+            self.tree_params = tree_params
+
+        # internal parameters
+        self.trees = []
+        self.y0 = None
+
+    def calculate_sign_residuals(self, y, yhat):
+        residuals = y - yhat
+        zero_mask = np.isclose(residuals, 0)
+
+        residuals[residuals > 0] = 1
+        residuals[residuals < 0] = -1
+        residuals[zero_mask] = 0
+        return residuals
+
+    def fit(self, X: pd.DataFrame):
+        self.trees = []
+
+        y = X[self.y_col]
+        self.y0 = np.median(y)
+        yhat = np.full(X.shape[0], self.y0)
+        X["residuals"] = self.calculate_sign_residuals(y, yhat)
+
+        mae = mean_absolute_error(y, yhat)
+
+        for i in range(self.n_estimators):
+            # fit a tree on the residuals
+            dt = _GBRDecisionTreeRegressor(
+                X_cols=self.X_cols,
+                residual_y_col="residuals",
+                actual_y_col=self.y_col,
+                **self.tree_params)
+            dt = dt.fit(X)
+
+            # update the total prediction
+            yhat += self.learning_rate * dt.predict_median_leaf(X, yhat)
+            X["residuals"] = self.calculate_sign_residuals(y, yhat)
+
+            # check stopping criteria
+            new_mae = mean_absolute_error(y, yhat)
+            if (mae - new_mae) < self.min_score_improvement:
+                logging.debug("Reached minimum score improvement, exiting on estimator {}".format(i + 1))
+                break
+
+            mae = new_mae
+            self.trees.append(dt)
+
+        return self
+
+    def predict(self, X):
+        yhat = np.full(X.shape[0], self.y0)
+        for tree in self.trees:
+            yhat += self.learning_rate * tree.predict(X)
+
+        return yhat
+
+
 class _FinalData:
-    def __init__(self, tree: Dict, leaf_median: float):
+    def __init__(self, tree: Dict, leaf_values: float):
         self.tree = tree
-        self.leaf_median = leaf_median
+        self.leaf_values = leaf_values
 
 
 class _GBRDecisionTreeRegressor:
@@ -130,10 +212,10 @@ class _GBRDecisionTreeRegressor:
         return max_split_value, max_feature, max_split_score
 
     def _get_leaf_counts(self, fvs: pd.DataFrame) -> _FinalData:
-        leaf_median = None
+        leaf_values = None
         if self.actual_y_col:
-            leaf_median = np.median(fvs[self.actual_y_col])
-        return _FinalData(dict(fvs[self.residual_y_col].value_counts()), leaf_median)
+            leaf_values = fvs[self.actual_y_col].copy()
+        return _FinalData(dict(fvs[self.residual_y_col].value_counts()), leaf_values)
 
     @staticmethod
     def _mse(left_branch: pd.Series, right_branch: pd.Series) -> float:
@@ -218,9 +300,9 @@ class _GBRDecisionTreeRegressor:
         return preds.map(calculate_average)
 
     @staticmethod
-    def _predict_for_mae(fv: pd.Series, tree: _FinalData):
+    def _predict_for_mae(fv: pd.Series, tree: Union[_FinalData, Tuple]):
         if isinstance(tree, _FinalData):
-            return tree.leaf_median
+            return np.median(fv["yhat"] - tree.leaf_values)
 
         split_value, split_feature = tree[1]
         if fv[split_feature] < split_value:
@@ -228,7 +310,8 @@ class _GBRDecisionTreeRegressor:
         else:
             return _GBRDecisionTreeRegressor._predict_for_mae(fv, tree[0]['right'])
 
-    def predict_median_leaf(self, fvs: pd.DataFrame) -> pd.Series:
+    def predict_median_leaf(self, fvs: pd.DataFrame, yhat: pd.Series) -> pd.Series:
+        fvs["yhat"] = yhat
         return fvs.apply(lambda fv: self._predict_for_mae(fv, self.tree), axis=1)
 
     def fit(self, fvs: pd.DataFrame):
