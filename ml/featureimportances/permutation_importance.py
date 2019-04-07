@@ -1,4 +1,4 @@
-from typing import Union, Callable, Optional, Tuple, List
+from typing import Union, Optional, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -55,12 +55,18 @@ class PermutationImportance:
         # internal parameters
         self.results_df = None
 
-    def _convert_pandas_to_numpy(self, arr):
+    def _convert_pandas_to_numpy(
+            self,
+            arr: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         if isinstance(arr, pd.DataFrame):
             return arr.values
         return arr
 
-    def _get_columns(self, X, feature_names):
+    def _get_columns(
+            self,
+            X: Union[pd.DataFrame, np.ndarray],
+            feature_names: List[str]):
+
         if isinstance(X, pd.DataFrame):
             return X.columns
         else:
@@ -69,7 +75,12 @@ class PermutationImportance:
             else:
                 return feature_names
 
-    def _calculate_feature_score(self, X, y, i, original_score):
+    def _calculate_feature_score(
+            self,
+            X: Union[pd.DataFrame, np.ndarray],
+            y: np.ndarray,
+            i: int,
+            original_score: float) -> Tuple[float, float]:
         data = self._convert_pandas_to_numpy(X).copy()
         scores = np.zeros(self.n_iter, dtype=np.float64)
 
@@ -82,10 +93,18 @@ class PermutationImportance:
 
         return scores.mean(), scores.std()
 
-    def _score(self, X, y):
+    def _score(
+            self,
+            X: Union[pd.DataFrame, np.ndarray],
+            y: np.ndarray) -> float:
         return self.model.score(X, y)
 
-    def fit(self, X, y, feature_names=None):
+    def fit(
+            self,
+            X: Union[pd.DataFrame, np.ndarray],
+            y: np.ndarray,
+            feature_names=None) -> 'PermutationImportance':
+
         np.random.seed(self.seed)
 
         original_score = self._score(X, y)
