@@ -41,7 +41,7 @@ https://www.kaggle.com/dansbecker/permutation-importance (bottom)
 """
 
 
-class PermutationImportance2:
+class PermutationImportance:
     def __init__(
             self,
             model: BaseEstimator,
@@ -106,95 +106,3 @@ class PermutationImportance2:
             print("{:.3f} +/- {:.3f} - {}".format(row["Weight"], row["Std"], col))
 
         self.results_df.apply(print_row, axis=1)
-
-
-class PermutationImportance:
-    def __init__(
-            self,
-            model: BaseEstimator,
-            n_iter: int = 5,
-            random_state: Optional[int] = None):
-
-        self.model = model
-        self.n_iter = n_iter
-        self.scoring_function = None
-        np.random.seed(random_state)
-
-        # internal parameters
-        self.results = []
-
-    # def set_scoring_function(self, metric: Union[str, Callable[[np.ndarray, np.ndarray], float]]):
-    #     if isinstance(metric, str):
-    #         if metric == "mse":
-
-    def _fit_feature(
-            self,
-            X: np.ndarray,
-            y: np.ndarray,
-            i: int,
-            bootstrapping: bool = True) -> Tuple[float, float, int]:
-        """
-        Parameters
-        ----------
-        X
-        y
-        i
-            Column index for feature to alter
-
-        Returns
-        -------
-        Feature index, mean score, score standard deviation
-        """
-        feature = X[:, i].copy()
-        if bootstrapping:
-            sampled_feature = np.random.choice(
-                feature, size=(feature.shape[0], self.n_iter), replace=True)
-        else:
-            sampled_feature = np.zeros((feature.shape[0], self.n_iter), dtype=feature.dtype)
-            for j in range(self.n_iter):
-                sampled_feature[:, j] = np.random.choice(
-                    feature, size=feature.shape[0], replace=False)
-
-        scores = []
-        for j in range(self.n_iter):
-            X[:, i] = sampled_feature[:, j]
-            if self.scoring_function is not None:
-                score = self.scoring_function(self.model.predict(X), y)
-            else:
-                score = self.model.score(X, y)
-            scores.append(score)
-
-        X[:, i] = feature
-
-        return np.mean(scores), np.std(scores), i
-
-    def fit(self, X, y):
-        self.results = []
-        for i in range(X.shape[1]):
-            self.results.append(self._fit_feature(X=X, y=y, i=i))
-
-    def get_results_df(self, feature_names: Optional[List[str]] = None):
-        if not len(self.results):
-            raise ValueError("Fit first")
-
-        if feature_names is not None:
-            if len(self.results) != len(feature_names):
-                raise ValueError("")
-
-        df = pd.DataFrame(self.results, columns=["Score", "Stdev", "Feature Index"])
-        if feature_names:
-            df = df.sort_values(by="Feature Index")
-            df["Feature"] = feature_names
-
-        return df.sort_values(by="Score", ascending=False)
-
-    def show(self, feature_names: Optional[List[str]] = None):
-        df = self.get_results_df(feature_names=feature_names)
-
-        def print_row(row):
-            col = row["Feature Index"]
-            if "Feature" in row:
-                col = row["Feature"]
-            print("{:.3f} +/- {:.3f} - {}".format(row["Score"], row["Stdev"], col))
-
-        df.apply(print_row, axis=1)
