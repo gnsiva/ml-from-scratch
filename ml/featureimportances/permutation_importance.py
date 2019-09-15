@@ -55,15 +55,15 @@ class PermutationImportance:
         # internal parameters
         self.results_df = None
 
+    @staticmethod
     def _convert_pandas_to_numpy(
-            self,
             arr: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         if isinstance(arr, pd.DataFrame):
             return arr.values
         return arr
 
+    @staticmethod
     def _get_columns(
-            self,
             X: Union[pd.DataFrame, np.ndarray],
             feature_names: List[str]):
 
