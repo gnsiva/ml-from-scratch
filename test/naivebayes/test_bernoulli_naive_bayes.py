@@ -62,3 +62,10 @@ class TestBernoulliNaiveBayes(TestCase):
         sklearn_nb = sklearn_nb.fit(training_X, training_y)
         print(sklearn_nb.predict_proba(test_X))
         # Doesn't match sklearn implementation
+
+        print(nb.predictor_prior)
+        print(nb.predict_proba(test_X))
+        for k, v in nb.predict_proba(test_X)[0].items():
+            print(k, v / nb.predictor_prior)
+
+

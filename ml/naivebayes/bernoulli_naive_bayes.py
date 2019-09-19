@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from google.protobuf.internal.well_known_types import Any
 
-from ml.naivebayes.counts_naive_bayes import CountsNaiveBayes
+from ml.naivebayes.base_naive_bayes import CountsNaiveBayes
 
 
 class BernoulliNaiveBayes(CountsNaiveBayes):
@@ -19,8 +19,7 @@ class BernoulliNaiveBayes(CountsNaiveBayes):
 
         self.priors = self._calc_priors(y)
         self.conditional_probabilities = self._calc_conditional_probabilities(X, y)
-
-        # TODO - calculate probability of data
+        self.predictor_prior = self._calc_p_B(X)
         return self
 
     def _calc_conditional_probabilities(self, X, y):
@@ -34,7 +33,17 @@ class BernoulliNaiveBayes(CountsNaiveBayes):
                 conditional_probabilities[c].append(p_B_A)
         return conditional_probabilities
 
-    # def _calc_p_B(self):
+    def _calc_p_B(self, X):
+        n = X.shape[1]
+        n_classes = len(self.classes)
+
+        log_prob = 0
+        for term in X.T:
+            numerator = term.sum() + n_classes
+            denominator = n + (2 * n_classes)
+            log_prob += math.log(numerator / denominator)
+
+        return math.exp(log_prob)
 
     def _predict_proba_row(self, x) -> Dict[Any, float]:
         probs = {}
