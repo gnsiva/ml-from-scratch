@@ -33,10 +33,8 @@ class TestBernoulliNaiveBayes(TestCase):
         nb = BernoulliNaiveBayes()
         nb = nb.fit(training_X.values, training_y)
 
-        # self.assertListEqual(list(nb.predict(test_X.values)), [0])
-        print(nb.classes)
-        print(nb.predict_proba(test_X.values))
-        print(nb.predict(test_X.values))
+        # check prediction
+        self.assertEqual(nb.predict(test_X.values)[0], 0)
 
         # check conditional probs
         for obs, exp in zip(nb.conditional_probabilities[0],
@@ -51,14 +49,13 @@ class TestBernoulliNaiveBayes(TestCase):
         self.assertAlmostEqual(nb.priors[0], 0.25)
         self.assertAlmostEqual(nb.priors[1], 0.75)
 
-
         predictions = nb.predict(test_X.values)
-        self.assertEqual(predictions.shape, (1,))
+        self.assertEqual(len(predictions), 1)
         # self.assertEqual(predictions[0], 0)  # TODO this isn't passing at the moment
 
         prob_preds = nb.predict_proba(test_X.values)
-        # self.assertAlmostEqual(prob_preds[0][0], 0.005184, 6)  # TODO need to get actual
-        # self.assertAlmostEqual(prob_preds[0][1], 0.021947873799725653, 6)  # answers from book
+        self.assertAlmostEqual(prob_preds[0][1], 0.005184, 6)
+        self.assertAlmostEqual(prob_preds[0][0], 0.021947873799725653, 6)
 
         # compare to sklearn algorithm
         sklearn_nb = BernoulliNB(alpha=1)
