@@ -1,10 +1,7 @@
 from collections import defaultdict
-from typing import List, Dict
+from typing import Dict, Any
 
 import math
-import pandas as pd
-import numpy as np
-from google.protobuf.internal.well_known_types import Any
 
 from ml.naivebayes.base_naive_bayes import CountsNaiveBayes
 

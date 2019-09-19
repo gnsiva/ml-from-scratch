@@ -26,14 +26,18 @@ class TestGaussianNaiveBayes(TestCase):
         nb = GaussianNaiveBayes()
         nb = nb.fit(X, y)
 
+        # Check prediction is correct
         predictions = nb.predict([[-0.8, -1]])
         self.assertEqual(len(predictions), 1)
         self.assertEqual(predictions[0], 1)
 
-        print(nb.predict([[-0.8, -1]]))
-        print(nb.predict_proba([[-0.8, -1]]))  #
-        # print(nb.conditional_probabilities)  # shape looks ok
-        # print(nb.classes)  # looks good
+        # Check probabilities
+        my_predict_proba = nb.predict_proba([[-0.8, -1]])
+        sk_predict_proba = clf.predict_proba([[-0.8, -1]])
+
+        for my_row, sk_row in zip(my_predict_proba, sk_predict_proba):
+            for my, sk in zip(my_row.values(), sk_row):
+                self.assertAlmostEqual(my, sk, places=5)
 
     def test_iris_example(self):
         """Test adapted from:
@@ -45,14 +49,18 @@ class TestGaussianNaiveBayes(TestCase):
         gnb = GaussianNB()
         gnb.fit(df, iris.target)
 
-        gnb.score(df, iris.target)
-        print(gnb.predict(df))
-        gnb.predict_proba(df)
+        sklearn_predictions = gnb.predict(df)
+        sklearn_predict_proba = gnb.predict_proba(df)
 
         nb = GaussianNaiveBayes()
-        nb.fit(df, iris.target)
-        nb.predict_proba(df)
-        print(nb.predict(df))
+        nb = nb.fit(df, iris.target)
+        my_predict_proba = nb.predict_proba(df)
+        my_predictions = nb.predict(df)
+
+        self.assertListEqual(list(sklearn_predictions), list(my_predictions))
+        for my, sk in zip(my_predict_proba, sklearn_predict_proba):
+            for value in my.values():
+                self.assertLessEqual(value, 1)
 
     def test_conditional_probabilities_simple(self):
         X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])

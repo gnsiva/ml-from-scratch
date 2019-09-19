@@ -62,20 +62,17 @@ class GaussianNaiveBayes(BaseNaiveBayes):
 
     def _predict_proba_row(self, x):
         probs = {}
+        p_B = 0
 
         for cls in self.classes:
             log_p_A = math.log(self.priors[cls])
-
             log_p_B_A = 0
-            log_p_B = 0
+
             for i, v in enumerate(x):
                 p_B_A = self.conditional_probabilities[cls][i].calc(v)
-                p_B = self.predictor_priors[i].calc(v)
-
                 log_p_B_A += math.log(p_B_A)
-                log_p_B += math.log(p_B)
 
-            # probs[cls] = math.exp((log_p_B_A + log_p_A) - log_p_B)
-            probs[cls] = math.exp((log_p_B_A + log_p_A))
+            probs[cls] = math.exp(log_p_B_A + log_p_A)
+            p_B += probs[cls]
 
-        return probs
+        return {k: (p / p_B) for k, p in probs.items()}
