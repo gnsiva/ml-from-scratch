@@ -57,10 +57,3 @@ class BernoulliNaiveBayes(CountsNaiveBayes):
                     log_prob += math.log(1 - con_prob)
             probs[cls] = math.exp(log_prob)
         return probs
-
-    def predict_proba(self, X) -> List[Dict[Any, float]]:
-        X = self._pandas_to_np(X)
-        return [self._predict_proba_row(row) for row in X]
-
-    def predict(self, X) -> List[Any]:
-        return [max(d, key=d.get) for d in self.predict_proba(X)]
