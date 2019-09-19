@@ -16,18 +16,21 @@ class Gaussian:
         return self.gaussian(self.mu, self.sigma, x)
 
     @staticmethod
-    def gaussian(self, mu, sigma, x):
+    def gaussian(mu, sigma, x):
+        if mu == 0 and sigma == 0:
+            return 0
         coefficent = 1 / (math.sqrt(2 * math.pi * sigma ** 2))
         exponent = - ((x - mu) ** 2) / (2 * sigma ** 2)
         return coefficent * math.exp(exponent)
+
+    def __str__(self):
+        return f"Gaussian(mu={self.mu}, sigma={self.sigma})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class GaussianNaiveBayes(BaseNaiveBayes):
-    def gaussian(self, mu, sigma, x):
-        coefficent = 1 / (math.sqrt(2 * math.pi * sigma ** 2))
-        exponent = - ((x - mu) ** 2) / (2 * sigma ** 2)
-        return coefficent * math.exp(exponent)
-
     def _calc_conditional_probabilities(self, X, y):
         conditional_probabilities = defaultdict(list)
 
@@ -50,12 +53,14 @@ class GaussianNaiveBayes(BaseNaiveBayes):
         return predictor_priors
 
     def fit(self, X, y):
+        X = self._pandas_to_np(X)
+
         self.priors = self._calc_priors(y)
         self.conditional_probabilities = self._calc_conditional_probabilities(X, y)
         self.predictor_priors = self._calc_p_B(X)
+        return self
 
-
-    def predict_proba_row(self, x):
+    def _predict_proba_row(self, x):
         probs = {}
 
         for cls in self.classes:
@@ -66,9 +71,11 @@ class GaussianNaiveBayes(BaseNaiveBayes):
             for i, v in enumerate(x):
                 p_B_A = self.conditional_probabilities[cls][i].calc(v)
                 p_B = self.predictor_priors[i].calc(v)
+
                 log_p_B_A += math.log(p_B_A)
                 log_p_B += math.log(p_B)
 
-            probs[cls] = (log_p_B_A + log_p_A) - log_p_B
+            # probs[cls] = math.exp((log_p_B_A + log_p_A) - log_p_B)
+            probs[cls] = math.exp((log_p_B_A + log_p_A))
 
         return probs
