@@ -10,7 +10,7 @@ class BaseNaiveBayes(ABC):
     def __init__(self):
         self.priors = {}
         self.conditional_probabilities = defaultdict(list)
-        self.predictor_priors: float = None
+        self.predictor_prior: float = None
         self.classes = None
 
     def _calc_priors(self, y):
