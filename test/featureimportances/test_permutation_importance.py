@@ -59,7 +59,7 @@ class PermutationImportanceTest(unittest.TestCase):
 
         pi = PermutationImportance(rfc, n_iter=10, random_state=42).fit(test[X_cols], test[y_col])
 
-        pi.show()
+        # pi.show()
 
 
 class PermutationImportanceRegressionTests(unittest.TestCase):
@@ -115,4 +115,4 @@ class PermutationImportanceRegressionTests(unittest.TestCase):
 
         pi = PermutationImportance(rfc, n_iter=10, random_state=42).fit(test[X_cols], test[y_col])
 
-        pi.show()
+        # pi.show()

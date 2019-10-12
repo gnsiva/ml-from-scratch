@@ -77,4 +77,4 @@ class PartialDependencePlotsTests(unittest.TestCase):
         pdp = PartialDependencePlots(rfr, X_cols)
         pdp.do_partial_plot(test[X_cols], feature)
         import matplotlib.pyplot as plt
-        plt.show()
+        # plt.show()
