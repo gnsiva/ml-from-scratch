@@ -1,7 +1,7 @@
 import seaborn as sns
 from unittest import TestCase
 
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.tree import DecisionTreeRegressor
